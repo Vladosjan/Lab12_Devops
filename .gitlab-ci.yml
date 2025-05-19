@@ -1,0 +1,48 @@
+# Global variables
+variables:
+  PYTHON_VERSION: "3.9"
+  STAGING_SERVER: "staging.example.com"
+
+# Pipeline stages
+stages:
+  - build
+  - test
+  - deploy
+
+# Cache for Python dependencies
+cache:
+  paths:
+    - .venv/
+
+# Build job: Set up environment
+build_job:
+  stage: build
+  image: python:$PYTHON_VERSION
+  script:
+    - echo "Setting up the environment..."
+    - python -m venv .venv             # Create virtual environment
+    - source .venv/bin/activate        # Activate it
+    - pip install -r requirements.txt  # Install dependencies
+  artifacts:
+    paths:
+      - .venv/                        # Store virtual env
+    expire_in: 1 hour
+
+# Test job: Run unit tests
+test_job:
+  stage: test
+  image: python:$PYTHON_VERSION
+  script:
+    - echo "Running tests..."
+    - source .venv/bin/activate
+    - pytest tests/ --junitxml=report.xml  # Run pytest with XML report
+  artifacts:
+    paths:
+      - report.xml
+    when: always                        # Store test report even on failure
+
+# Deploy job: Deploy to staging
+deploy_staging:
+  stage: deploy
+  script:
+    - echo "Deploying to $STAGING_SERVER
